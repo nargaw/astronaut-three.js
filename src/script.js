@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import img from './img/particle.png'
 import fragment from './shaders/fragment.glsl'
 import vertex from './shaders/vertex.glsl'
-import GLTFLoader from 'three/examples/jsm/loaders/GLTFLoader'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 const canvas = document.querySelector('.webgl')
 
 class NewScene{
@@ -15,6 +15,7 @@ class NewScene{
     _Init(){
         this.scene = new THREE.Scene()
         this.clock = new THREE.Clock()
+        this.gltfLoader = new GLTFLoader()
         this.Texture()
         this.Model()
         this.InitCamera()
@@ -31,15 +32,26 @@ class NewScene{
     Texture(){
         this.textureLoader = new THREE.TextureLoader()
         this.image = this.textureLoader.load(img)
+        this.modelTexture = this.textureLoader.load('baked.jpg')
+        this.modelTexture.flipY = false
+        this.modelTexture.encoding = THREE.sRGBEncoding
     }
 
     Model(){
-        this.gltfLoader = new GLTFLoader()
-        this.gltfLoader.load((gltf) => {
-            'model.glb', () => {
-                console.log(gltf)
-            }
+        this.modelMaterial = new THREE.MeshBasicMaterial({
+            map: this.modelTexture,
+            transparent: true,
+            alphaTest: 1.0
         })
+        this.gltfLoader.load(
+            'astronaut.glb', (gltf) => {
+                gltf.scene.traverse((child) => {
+                    child.material = this.modelMaterial
+                })
+                this.scene.add(gltf.scene)
+    
+            }
+        )
     }
     BoxParticles(){
         
@@ -97,7 +109,7 @@ class NewScene{
 
     InitCamera(){
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
-        this.camera.position.set(0, 0, 5)
+        this.camera.position.set(10, 9, 0)
         this.scene.add(this.camera)
     }
 
@@ -109,6 +121,7 @@ class NewScene{
     InitControls(){
         this.controls = new OrbitControls(this.camera, canvas)
         this.controls.enableDamping = true
+        this.controls.autoRotate = true
         this.controls.update()
     }
 
